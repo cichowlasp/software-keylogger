@@ -67,5 +67,4 @@ static void __exit keylogger_exit(void) {
 module_init(keylogger_init);
 module_exit(keylogger_exit);
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Piotr :));
-
+MODULE_AUTHOR("Piotr :)");
