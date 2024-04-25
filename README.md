@@ -4,11 +4,14 @@ Projekt ma na celu poznanie podstawowe zasady działania sterowników jądra Lin
 
 # Kompilacja i instalacja modułu
 
-1. Kompilacja modułu:
+1. __Kompilacja modułu:__
    Aby skompilować moduł należy użyć polecenia `make -C /lib/modules/$(uname -r)/build M=$(pwd) modules`
-2. Uruchomienie modułu:
+2. __Uruchomienie modułu:__
    Po skompilowaniu modułu, załaduj go do jądra za pomocą polecenia `sudo insmod keylogger.ko`.
    Sprawdź logi jądra, aby upewnić się, że moduł został załadowany poprawnie: `sudo dmesg`.
-3. Logi wciskanych klawiszy zapisują się w folderze /proc/keylogger. Aby wyświetlić listę wciśniętych można skorzystać z polecenia `cat /proc/keylogger`
-4. Wyładowanie modułu:
+3. __Odczyt wciśniętych klawiszy:__
+   Logi wciskanych klawiszy zapisują się w folderze /proc/keylogger. Aby wyświetlić listę wciśniętych można skorzystać z polecenia `cat /proc/keylogger`
+5. __Zatrzymanie modułu:__
    Aby wyładować moduł z jądra, użyj polecenia `sudo rmmod keylogger`.
+# TODO
+- dodać Konami Code i easter egga :)
