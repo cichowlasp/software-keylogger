@@ -5,10 +5,10 @@ Projekt ma na celu poznanie podstawowe zasady działania sterowników jądra Lin
 # Kompilacja i instalacja modułu
 
 1. Kompilacja modułu:
-   Upewnij się, że masz zainstalowane narzędzia do kompilacji jądra, takie jak nagłówki jądra Linuxa i pakiet build-essential.
-   Użyj polecenia make w katalogu, w którym znajdują się pliki modułu (keylogger.c, keylogger.h, Makefile).
+   Aby skompilować moduł należy użyć polecenia `make -C /lib/modules/$(uname -r)/build M=$(pwd) modules`
 2. Uruchomienie modułu:
-   Po skompilowaniu modułu, załaduj go do jądra za pomocą polecenia insmod keylogger.ko.
-   Sprawdź logi jądra, aby upewnić się, że moduł został załadowany poprawnie: dmesg.
-3. Wyładowanie modułu:
-   Aby wyładować moduł z jądra, użyj polecenia rmmod keylogger.
+   Po skompilowaniu modułu, załaduj go do jądra za pomocą polecenia `sudo insmod keylogger.ko`.
+   Sprawdź logi jądra, aby upewnić się, że moduł został załadowany poprawnie: `sudo dmesg`.
+3. Logi wciskanych klawiszy zapisują się w folderze /proc/keylogger. Aby wyświetlić listę wciśniętych można skorzystać z polecenia `cat /proc/keylogger`
+4. Wyładowanie modułu:
+   Aby wyładować moduł z jądra, użyj polecenia `sudo rmmod keylogger`.
