@@ -13,7 +13,7 @@ Projekt ma na celu poznanie podstawowe zasady działania sterowników jądra Lin
    Sprawdź logi jądra, aby upewnić się, że moduł został załadowany poprawnie:\
    ```sudo dmesg```
 5. __Odczyt wciśniętych klawiszy:__
-   Logi wciskanych klawiszy zapisują się w folderze /proc/keylogger. Aby wyświetlić listę wciśniętych można skorzystać z polecenia:\
+   Logi wciskanych klawiszy zapisują się w folderze /proc/keylogger. Aby wyświetlić listę wciśniętych klawiszy można skorzystać z polecenia:\
    ```cat /proc/keylogger```
 7. __Zatrzymanie modułu:__
    Aby wyłączyć moduł użyj polecenia:\
