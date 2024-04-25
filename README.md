@@ -9,7 +9,7 @@ Projekt ma na celu poznanie podstawowe zasady działania sterowników jądra Lin
    ```make -C /lib/modules/$(uname -r)/build M=$(pwd) modules```
 3. __Uruchomienie modułu:__
    Po skompilowaniu modułu, załaduj go do jądra za pomocą polecenia:\
-   ```sudo insmod keylogger.ko```
+   ```sudo insmod keylogger.ko```\
    Sprawdź logi jądra, aby upewnić się, że moduł został załadowany poprawnie:\
    ```sudo dmesg```
 5. __Odczyt wciśniętych klawiszy:__
