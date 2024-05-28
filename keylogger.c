@@ -240,5 +240,5 @@ module_init(keylogger_init);
 module_exit(keylogger_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Piotr i Karolina :)");
+MODULE_AUTHOR("Piotr, Karolina, Kasia i Julia :)");
 MODULE_DESCRIPTION("A simple keylogger with a custom command execution on Konami Code sequence.");
