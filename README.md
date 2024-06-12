@@ -6,7 +6,7 @@ Projekt ma na celu poznanie podstawowe zasady działania sterowników jądra Lin
 
 1. __Kompilacja modułu:__
    Aby skompilować moduł należy użyć polecenia:\
-   ```make -C /lib/modules/$(uname -r)/build M=$(pwd) modules```
+   ```make```
 3. __Uruchomienie modułu:__
    Po skompilowaniu modułu, załaduj go do jądra za pomocą polecenia:\
    ```sudo insmod keylogger.ko```\
@@ -18,5 +18,3 @@ Projekt ma na celu poznanie podstawowe zasady działania sterowników jądra Lin
 7. __Zatrzymanie modułu:__
    Aby wyłączyć moduł użyj polecenia:\
    ```sudo rmmod keylogger```
-# TODO
-- dodać Konami Code i easter egga :)
